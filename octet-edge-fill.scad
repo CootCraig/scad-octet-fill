@@ -4,11 +4,11 @@
 use <common-functions.scad>;
 
 // Module parameters
-coot_octet_fill_octahedron_circumscribe_diameter = inch(1.0);
-coot_octet_fill_cube_width = inch(10);
-coot_octet_fill_cube_height = inch(10);
-coot_octet_fill_cube_depth = inch(10);
-coot_octet_fill_edge_radius = 0.06 * coot_octet_fill_octahedron_circumscribe_diameter;
+coot_octet_fill_octahedron_edge_length = inch(3);
+coot_octet_fill_cube_width = inch(8);
+coot_octet_fill_cube_height = inch(8);
+coot_octet_fill_cube_depth = inch(8);
+coot_octet_fill_edge_radius = 0.06 * coot_octet_fill_octahedron_edge_length;
 coot_octet_fill_edge_shrink = 0.75;
 coot_octet_fill_oct_edge_color = color_1();
 coot_octet_fill_tet_edge_color = color_2();
@@ -17,9 +17,9 @@ coot_octet_fill_tet_edge_color = color_2();
 // ru = (a / 2) * sqrt(2)
 // ru is radius of circumscribed sphere
 // a is length of the octahedron edge
-// ru = fill_octahedron_circumscribe_diameter / 2
-// so 2 * ru = fill_octahedron_circumscribe_diameter = a * sqrt(2)
-// so a = fill_octahedron_circumscribe_diameter / sqrt(2)
+// ru = fill_octahedron_edge_length / 2
+// so 2 * ru = fill_octahedron_edge_length = a * sqrt(2)
+// so a = fill_octahedron_edge_length / sqrt(2)
 
 // See https://en.wikipedia.org/wiki/Tetrahedron
 // vertices - Tetrahedron: (1,1,1), (1,−1,−1), (−1,1,−1), (−1,−1,1)
@@ -28,7 +28,7 @@ coot_octet_fill_tet_edge_color = color_2();
 // ru is radius of circumscribed sphere
 // a is length of the tetrahedron edge
 
-module coot_octet_edge_fill( fill_octahedron_circumscribe_diameter = coot_octet_fill_octahedron_circumscribe_diameter,
+module coot_octet_edge_fill( fill_octahedron_edge_length = coot_octet_fill_octahedron_edge_length,
                              fill_cube_width = coot_octet_fill_cube_width,
                              fill_cube_height = coot_octet_fill_cube_height,
                              fill_cube_depth = coot_octet_fill_cube_depth,
@@ -37,135 +37,149 @@ module coot_octet_edge_fill( fill_octahedron_circumscribe_diameter = coot_octet_
                              fill_oct_edge_color = coot_octet_fill_oct_edge_color,
                              fill_tet_edge_color = coot_octet_fill_tet_edge_color ) {
 
-  // fill_octahedron_circumscribe_diameter - Space fill Octahedrons are lined up <><><><><>
-  octahedron_circumscribe_radius = fill_octahedron_circumscribe_diameter / 2;
-  fill_edge_length = fill_octahedron_circumscribe_diameter / sqrt(2);
+  fill_octahedron_edge_length_half = fill_octahedron_edge_length / 2;
+  octahedron_circumscribe_radius = fill_octahedron_edge_length_half * sqrt(2);
+  tetrahedron_circumscribe_radius = (fill_octahedron_edge_length * sqrt(6)) / 4;
 
-  octahedron_circumscribe_radius_shrunk = octahedron_circumscribe_radius * 
+  origin_octahedron_vertices = [[0,0,octahedron_circumscribe_radius],
+                                [fill_octahedron_edge_length_half,fill_octahedron_edge_length_half,0],
+                                [fill_octahedron_edge_length_half,-fill_octahedron_edge_length_half,0],
+                                [-fill_octahedron_edge_length_half,-fill_octahedron_edge_length_half,0],
+                                [-fill_octahedron_edge_length_half,fill_octahedron_edge_length_half,0],
+                                [0,0,-octahedron_circumscribe_radius]];
 
-  octahedron_edge_position = ((fill_octahedron_circumscribe_diameter * fill_edge_shrink) / 2);
+  origin_octahedron_edges = [[origin_octahedron_vertices[0], origin_octahedron_vertices[1]],
+                             [origin_octahedron_vertices[0], origin_octahedron_vertices[2]],
+                             [origin_octahedron_vertices[0], origin_octahedron_vertices[3]],
+                             [origin_octahedron_vertices[0], origin_octahedron_vertices[4]],
+                             [origin_octahedron_vertices[1], origin_octahedron_vertices[2]],
+                             [origin_octahedron_vertices[2], origin_octahedron_vertices[3]],
+                             [origin_octahedron_vertices[3], origin_octahedron_vertices[4]],
+                             [origin_octahedron_vertices[4], origin_octahedron_vertices[1]],
+                             [origin_octahedron_vertices[5], origin_octahedron_vertices[1]],
+                             [origin_octahedron_vertices[5], origin_octahedron_vertices[2]],
+                             [origin_octahedron_vertices[5], origin_octahedron_vertices[3]],
+                             [origin_octahedron_vertices[5], origin_octahedron_vertices[4]]];
 
+  origin_octahedron_face_indices = [[0,1,2],
+                                    [0,2,3],
+                                    [0,3,4],
+                                    [0,4,1],
+                                    [5,2,1],
+                                    [5,3,2],
+                                    [5,4,3],
+                                    [5,1,4]];
 
-  tetrahedron_circumscribe_radius = (sqrt(6) / 4) * fill_edge_length
+  origin_octahedron_faces = [[origin_octahedron_vertices[0], origin_octahedron_vertices[1],origin_octahedron_vertices[2]],
+                             [origin_octahedron_vertices[0], origin_octahedron_vertices[2],origin_octahedron_vertices[3]],
+                             [origin_octahedron_vertices[0], origin_octahedron_vertices[3],origin_octahedron_vertices[4]],
+                             [origin_octahedron_vertices[0], origin_octahedron_vertices[4],origin_octahedron_vertices[1]],
+                             [origin_octahedron_vertices[5], origin_octahedron_vertices[2],origin_octahedron_vertices[1]],
+                             [origin_octahedron_vertices[5], origin_octahedron_vertices[3],origin_octahedron_vertices[2]],
+                             [origin_octahedron_vertices[5], origin_octahedron_vertices[4],origin_octahedron_vertices[3]],
+                             [origin_octahedron_vertices[5], origin_octahedron_vertices[1],origin_octahedron_vertices[4]]];
 
-  octahedron_edge_position = ((fill_octahedron_circumscribe_diameter * fill_edge_shrink) / 2);
+  tetrahedron_edge_to_edge_distance = fill_octahedron_edge_length / sqrt(2);
+  tetrahedron_edge_to_edge_distance_half = tetrahedron_edge_to_edge_distance / 2;
 
-  origin_octahedron_edges = [[[0,0,octahedron_edge_position], [octahedron_edge_position,0,0]],
-                            [[0,0,octahedron_edge_position], [0,octahedron_edge_position,0]],
-                            [[0,0,octahedron_edge_position], [-octahedron_edge_position,0,0]],
-                            [[0,0,octahedron_edge_position], [0,-octahedron_edge_position,0]],
+  tetrahetron_0_vertices = [[fill_octahedron_edge_length_half,0,tetrahedron_edge_to_edge_distance_half],
+                                    [-fill_octahedron_edge_length_half,0,tetrahedron_edge_to_edge_distance_half],
+                                    [0,fill_octahedron_edge_length_half,-tetrahedron_edge_to_edge_distance_half],
+                                    [0,-fill_octahedron_edge_length_half,-tetrahedron_edge_to_edge_distance_half]];
+  tetrahedron_0_face_indices = [[0,3,1],[0,1,2],[0,2,3],[1,3,2]];
 
-                            [[octahedron_edge_position,0,0], [0,octahedron_edge_position,0]],
-                            [[0,octahedron_edge_position,0], [-octahedron_edge_position,0,0]],
-                            [[-octahedron_edge_position,0,0], [0,-octahedron_edge_position,0]],
-                            [[0,-octahedron_edge_position,0], [octahedron_edge_position,0,0]],
+  tetrahedron_1_vertices = [[0,fill_octahedron_edge_length_half,tetrahedron_edge_to_edge_distance_half],
+                                     [0,-fill_octahedron_edge_length_half,tetrahedron_edge_to_edge_distance_half],
+                                     [fill_octahedron_edge_length_half,0,-tetrahedron_edge_to_edge_distance_half],
+                                     [-fill_octahedron_edge_length_half,0,-tetrahedron_edge_to_edge_distance_half]];
+  tetrahedron_1_face_indices = [[0,1,3],[0,2,1],[0,3,2],[1,2,3]];
 
-                            [[0,0,-octahedron_edge_position], [octahedron_edge_position,0,0]],
-                            [[0,0,-octahedron_edge_position], [0,octahedron_edge_position,0]],
-                            [[0,0,-octahedron_edge_position], [-octahedron_edge_position,0,0]],
-                            [[0,0,-octahedron_edge_position], [0,-octahedron_edge_position,0]]];
-
-  origin_tetrahedron_axis_position = octahedron_edge_position;
-  origin_tetrahedron_points = [[origin_tetrahedron_axis_position,origin_tetrahedron_axis_position,origin_tetrahedron_axis_position],
-                               [origin_tetrahedron_axis_position,-origin_tetrahedron_axis_position,-origin_tetrahedron_axis_position],
-                               [-origin_tetrahedron_axis_position,origin_tetrahedron_axis_position,-origin_tetrahedron_axis_position],
-                               [-origin_tetrahedron_axis_position,-origin_tetrahedron_axis_position,origin_tetrahedron_axis_position]];
-
-  origin_tetrahedron_edges = [[origin_tetrahedron_points[0], origin_tetrahedron_points[1]],
-                              [origin_tetrahedron_points[0], origin_tetrahedron_points[2]],
-                              [origin_tetrahedron_points[0], origin_tetrahedron_points[3]],
-                              [origin_tetrahedron_points[1], origin_tetrahedron_points[2]],
-                              [origin_tetrahedron_points[1], origin_tetrahedron_points[3]],
-                              [origin_tetrahedron_points[2], origin_tetrahedron_points[3]]];
-
-  module origin_octahedron() {
-    for(an_edge = origin_octahedron_edges) {
-      hull() {
-        translate(an_edge[0]) {
-          sphere(r=fill_edge_radius);
-        }
-        translate(an_edge[1]) {
-          sphere(r=fill_edge_radius);
-        }
-      }
+  module origin_octahedron_polyhedron(face_color=color_1()) {
+    color( face_color ) {
+      polyhedron( points = origin_octahedron_vertices, faces = origin_octahedron_face_indices );
     }
   }
-  module origin_tetrahedron() {
-    for(an_edge = origin_tetrahedron_edges) {
-      hull() {
-        translate(an_edge[0]) {
-          sphere(r=fill_edge_radius);
-        }
-        translate(an_edge[1]) {
-          sphere(r=fill_edge_radius);
-        }
-      }
+  module tetrahedron_1_polyhedron(face_color=color_3()) {
+    color( face_color ) {
+      polyhedron( points = tetrahedron_1_vertices, faces = tetrahedron_1_face_indices );
     }
   }
-  module octahedron_fill() {
-    for (zoffset = [-fill_octahedron_circumscribe_diameter : fill_octahedron_circumscribe_diameter : (fill_cube_depth + fill_octahedron_circumscribe_diameter)]) {
-      for (yoffset = [-fill_octahedron_circumscribe_diameter : fill_octahedron_circumscribe_diameter : (fill_cube_depth + fill_octahedron_circumscribe_diameter)]) {
-        for (xoffset = [-fill_octahedron_circumscribe_diameter : (2 * fill_octahedron_circumscribe_diameter) : (fill_cube_width + fill_octahedron_circumscribe_diameter)]) {
-        }
-      }
+  module tetrahedron_0_polyhedron(face_color=color_3()) {
+    color( face_color ) {
+      polyhedron( points = tetrahetron_0_vertices, faces = tetrahedron_0_face_indices );
     }
   }
-  module octahedron_line_down_x(x_translate=0, y_translate=0, z_translate=0) {
-    translate([x_translate, y_translate, z_translate]) {
-      for (xoffset = [-(fill_octahedron_circumscribe_diameter / 2) : fill_octahedron_circumscribe_diameter : (fill_cube_width + (fill_octahedron_circumscribe_diameter / 2))]) {
-        translate([xoffset,0,0]) {
-          origin_octahedron();
-        }
-      }
-    }
-  }
-  module octahedron_xy_half_slice() {
-    for (yoffset = [-(fill_octahedron_circumscribe_diameter / 2) : fill_octahedron_circumscribe_diameter : (fill_cube_width + fill_octahedron_circumscribe_diameter)]) {
-      octahedron_line_down_x(y_translate=yoffset);
-    }
-  }
-  module octahedron_xy_full_slice() {
-    octahedron_xy_half_slice();
-    translate([fill_octahedron_circumscribe_diameter/2,fill_octahedron_circumscribe_diameter/2,0]) {
-      octahedron_xy_half_slice();
-}
-  }
-  module octahedron_xy_odd_slices() {
-    for (zoffset = [0 : fill_octahedron_circumscribe_diameter : fill_cube_depth + (fill_octahedron_circumscribe_diameter / 2)]) {
-      translate([0,0,zoffset]) {
-        octahedron_xy_full_slice();
-      }
-    }
-  }
-  module octahedron_xy_even_slices() {
-    translate([(fill_octahedron_circumscribe_diameter / 2),(fill_octahedron_circumscribe_diameter / 2),0]) {
-      for (zoffset = [-(fill_octahedron_circumscribe_diameter / 4) : fill_octahedron_circumscribe_diameter : fill_cube_depth + (fill_octahedron_circumscribe_diameter / 2)]) {
-        translate([0,0,zoffset]) {
-          octahedron_xy_full_slice();
+  module origin_xy_layer_0_oct_test() {
+    origin_point = [0,0];
+    xlimit = floor(fill_cube_width / fill_octahedron_edge_length) + 1;
+    ylimit = floor(fill_cube_height / fill_octahedron_edge_length) + 1;
+
+    for(yindex = [0 : 1 : ylimit]) {
+      for(xindex = [0 : 1 : xlimit]) {
+        translate([(origin_point[0] + (xindex * fill_octahedron_edge_length)),
+                   (origin_point[1] + (yindex * fill_octahedron_edge_length)),
+                   0]) {
+          origin_octahedron_polyhedron(face_color=color_1());
         }
       }
     }
   }
-  module octahedron_fill() {
-    octahedron_xy_odd_slices();
-    octahedron_xy_even_slices();
-  }
+  module origin_xy_layer_1_oct_test() {
+    origin_point = [-(fill_octahedron_edge_length / 2),-(fill_octahedron_edge_length / 2),octahedron_circumscribe_radius];
+    xlimit = floor(fill_cube_width / fill_octahedron_edge_length) + 2;
+    ylimit = floor(fill_cube_height / fill_octahedron_edge_length) + 2;
 
-  module tester2() {
-    color(fill_oct_edge_color) {
-      octahedron_xy_odd_slices();
+    for(yindex = [0 : 1 : ylimit]) {
+      for(xindex = [0 : 1 : xlimit]) {
+        translate([(origin_point[0] + (xindex * fill_octahedron_edge_length)),
+                   (origin_point[1] + (yindex * fill_octahedron_edge_length)),
+                   origin_point[2]]) {
+          origin_octahedron_polyhedron(face_color=color_2());
+        }
+      }
     }
   }
+  origin_xy_layer_0_oct_test();
 
-  module tester3() {
-    color(color_1()) {
-      octahedron_xy_full_slice();
+  translate([-fill_octahedron_edge_length_half,0,-tetrahedron_edge_to_edge_distance_half]) {
+    tetrahedron_1_polyhedron();
+  }
+  translate([fill_octahedron_edge_length_half,0,-tetrahedron_edge_to_edge_distance_half]) {
+    tetrahedron_1_polyhedron();
+  }
+  translate([3*fill_octahedron_edge_length_half,0,-tetrahedron_edge_to_edge_distance_half]) {
+    tetrahedron_1_polyhedron();
+  }
+  translate([5*fill_octahedron_edge_length_half,0,-tetrahedron_edge_to_edge_distance_half]) {
+    tetrahedron_1_polyhedron();
+  }
+  translate([0,fill_octahedron_edge_length,0]) {
+    translate([-fill_octahedron_edge_length_half,0,-tetrahedron_edge_to_edge_distance_half]) {
+      tetrahedron_1_polyhedron();
     }
-    color(color_2()) {
-      origin_tetrahedron();
+    translate([fill_octahedron_edge_length_half,0,-tetrahedron_edge_to_edge_distance_half]) {
+      tetrahedron_1_polyhedron();
+    }
+    translate([3*fill_octahedron_edge_length_half,0,-tetrahedron_edge_to_edge_distance_half]) {
+      tetrahedron_1_polyhedron();
+    }
+    translate([5*fill_octahedron_edge_length_half,0,-tetrahedron_edge_to_edge_distance_half]) {
+      tetrahedron_1_polyhedron();
     }
   }
-
-  tester3();
+  translate([0,2*fill_octahedron_edge_length,0]) {
+    translate([-fill_octahedron_edge_length_half,0,-tetrahedron_edge_to_edge_distance_half]) {
+      tetrahedron_1_polyhedron();
+    }
+    translate([fill_octahedron_edge_length_half,0,-tetrahedron_edge_to_edge_distance_half]) {
+      tetrahedron_1_polyhedron();
+    }
+    translate([3*fill_octahedron_edge_length_half,0,-tetrahedron_edge_to_edge_distance_half]) {
+      tetrahedron_1_polyhedron();
+    }
+    translate([5*fill_octahedron_edge_length_half,0,-tetrahedron_edge_to_edge_distance_half]) {
+      tetrahedron_1_polyhedron();
+    }
+  }
 }
 
