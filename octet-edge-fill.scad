@@ -13,6 +13,18 @@ coot_octet_fill_edge_shrink = 0.75;
 coot_octet_fill_oct_edge_color = color_1();
 coot_octet_fill_tet_edge_color = color_2();
 
+// See https://en.wikipedia.org/wiki/Octahedron
+// ru = (a / 2) * sqrt(2)
+// ru is radius of circumscribed sphere
+// a is length of the octahedron edge
+// ru = fill_octahedron_step / 2
+// so 2 * ru = fill_octahedron_step = a * sqrt(2)
+// so a = fill_octahedron_step / sqrt(2)
+
+// See https://en.wikipedia.org/wiki/Tetrahedron
+// ru = (sqrt(6) / 4) * a
+// ru is radius of circumscribed sphere
+// a is length of the tetrahedron edge
 
 module coot_octet_edge_fill( fill_octahedron_step = coot_octet_fill_octahedron_step,
                              fill_cube_width = coot_octet_fill_cube_width,
@@ -22,6 +34,8 @@ module coot_octet_edge_fill( fill_octahedron_step = coot_octet_fill_octahedron_s
                              fill_edge_shrink = coot_octet_fill_edge_shrink,
                              fill_oct_edge_color = coot_octet_fill_oct_edge_color,
                              fill_tet_edge_color = coot_octet_fill_tet_edge_color ) {
+
+  fill_edge_length = fill_octahedron_step / sqrt(2);
 
   octahedron_edge_position = ((fill_octahedron_step * fill_edge_shrink) / 2);
 
@@ -40,14 +54,33 @@ module coot_octet_edge_fill( fill_octahedron_step = coot_octet_fill_octahedron_s
                             [[0,0,-octahedron_edge_position], [-octahedron_edge_position,0,0]],
                             [[0,0,-octahedron_edge_position], [0,-octahedron_edge_position,0]]];
 
-  tetrahedron_edge_position = octahedron_edge_position;
-  origin_tetrahedron_edges = [[[0,0,0], [0,0,0]],
-                              [[0,0,0], [0,0,0]],
-                              [[0,0,0], [0,0,0]],
-                              [[0,0,0], [0,0,0]]];
+  origin_tetrahedron_axis_position = octahedron_edge_position;
+  origin_tetrahedron_points = [[origin_tetrahedron_axis_position,origin_tetrahedron_axis_position,origin_tetrahedron_axis_position],
+                               [origin_tetrahedron_axis_position,-origin_tetrahedron_axis_position,-origin_tetrahedron_axis_position],
+                               [-origin_tetrahedron_axis_position,origin_tetrahedron_axis_position,-origin_tetrahedron_axis_position],
+                               [-origin_tetrahedron_axis_position,-origin_tetrahedron_axis_position,origin_tetrahedron_axis_position]];
+
+  origin_tetrahedron_edges = [[origin_tetrahedron_points[0], origin_tetrahedron_points[1]],
+                              [origin_tetrahedron_points[0], origin_tetrahedron_points[2]],
+                              [origin_tetrahedron_points[0], origin_tetrahedron_points[3]],
+                              [origin_tetrahedron_points[1], origin_tetrahedron_points[2]],
+                              [origin_tetrahedron_points[1], origin_tetrahedron_points[3]],
+                              [origin_tetrahedron_points[2], origin_tetrahedron_points[3]]];
 
   module origin_octahedron() {
     for(an_edge = origin_octahedron_edges) {
+      hull() {
+        translate(an_edge[0]) {
+          sphere(r=fill_edge_radius);
+        }
+        translate(an_edge[1]) {
+          sphere(r=fill_edge_radius);
+        }
+      }
+    }
+  }
+  module origin_tetrahedron() {
+    for(an_edge = origin_tetrahedron_edges) {
       hull() {
         translate(an_edge[0]) {
           sphere(r=fill_edge_radius);
@@ -81,13 +114,9 @@ module coot_octet_edge_fill( fill_octahedron_step = coot_octet_fill_octahedron_s
     }
   }
   module octahedron_xy_full_slice() {
-color(color_1()) {
     octahedron_xy_half_slice();
-}
-color(color_2()) {
     translate([fill_octahedron_step/2,fill_octahedron_step/2,0]) {
       octahedron_xy_half_slice();
-    }
 }
   }
   module octahedron_xy_odd_slices() {
@@ -117,6 +146,15 @@ color(color_2()) {
     }
   }
 
-  tester2();
+  module tester3() {
+    color(color_1()) {
+      octahedron_xy_full_slice();
+    }
+    color(color_2()) {
+      origin_tetrahedron();
+    }
+  }
+
+  tester3();
 }
 
